@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local secrets and configuration
+.env
+.env.*
+!.env.example
+data/settings.json
+data/*.json.tmp
+
+# Runtime data
+data/*.db
+data/*.db-*
+data/*.sqlite
+data/*.sqlite3
+data/*.lock
+data/exports/
+logs/*
+!logs/.gitkeep
+!data/.gitkeep
+
+# Agent/runtime artifacts
+.claude/
+.codex/
+.gemini/
+.agent-cache/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+*.zip

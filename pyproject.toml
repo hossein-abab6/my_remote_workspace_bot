@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=80"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "my-remote-workspace-bot"
+version = "0.1.1"
+description = "A local web-configured Telegram gateway for coding agents and workspace sessions."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "my_remote_workspace_bot contributors" }]
+dependencies = [
+  "fastapi>=0.116,<1.0",
+  "uvicorn[standard]>=0.35,<1.0",
+  "python-telegram-bot>=22.3,<23.0",
+  "pydantic>=2.11,<3.0",
+  "python-dotenv>=1.1,<2.0",
+  "jinja2>=3.1,<4.0",
+  "claude-agent-sdk>=0.1.0",
+]
+
+[project.scripts]
+my-remote-workspace-bot = "app.main:cli"
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.setuptools.package-data]
+app = ["templates/*.html", "static/*.css", "static/*.js"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]

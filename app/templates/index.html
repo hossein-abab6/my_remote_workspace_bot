@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>my_remote_workspace_bot</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <style>
+    /* Persian/English font support */
+    body {
+      font-family: 'Vazir', 'Roboto', sans-serif;
+      direction: ltr;
+    }
+    .rtl {
+      direction: rtl;
+    }
+    /* Improved UI elements */
+    .agent-select {
+      min-width: 200px;
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    .agent-selection {
+      margin-bottom: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      background-color: #f8f9fa;
+    }
+    /* Status message styles */
+    .status-message {
+      padding: 10px 15px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+    }
+    .status-success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .status-error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    .status-info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow" data-i18n="topbar.eyebrow">LOCAL CONTROL PANEL</p>
+        <h1>my_remote_workspace_bot</h1>
+        <p class="subtitle" data-i18n="topbar.subtitle">Connect a messaging bot to a coding agent and your local workspaces.</p>
+      </div>
+      <div class="topbar-actions">
+        <div id="runtimeBadge" class="status-badge muted" data-i18n="badge.checking">Checking runtime…</div>
+        <button type="button" id="langToggle" class="lang-toggle">فارسی</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="sidebar card">
+        <button class="nav-item active" data-tab="connection" data-i18n="nav.step1">1. Connection</button>
+        <button class="nav-item" data-tab="agent" data-i18n="nav.step2">2. Agent</button>
+        <button class="nav-item" data-tab="advanced" data-i18n="nav.step3">3. Advanced</button>
+        <button class="nav-item" data-tab="review" data-i18n="nav.step4">4. Review</button>
+        <div class="sidebar-note">
+          <strong data-i18n="sidebar.note.title">Local-first</strong>
+          <span data-i18n="sidebar.note.body">Tokens, database files and logs stay on this computer and are ignored by Git.</span>
+        </div>
+      </aside>
+
+      <section class="content">
+        <div id="alert" class="alert hidden"></div>
+
+        <form id="settingsForm" novalidate>
+          <section class="tab-panel active" data-panel="connection">
+            <div class="card section-card">
+              <div class="section-heading">
+                <div>
+                  <p class="step" data-i18n="conn.step">CONNECTION</p>
+                  <h2 data-i18n="conn.title">Messaging and workspace access</h2>
+                  <p data-i18n="conn.desc">Set the Telegram bot identity, authorized users, and the only local root the bot may browse.</p>
+                </div>
+              </div>
+
+              <div class="field-grid two connection-grid">
+                <label class="field">
+                  <span data-i18n="conn.transport.label">Transport</span>
+                  <select id="transport" disabled>
+                    <option value="telegram">Telegram</option>
+                  </select>
+                  <small data-i18n="conn.transport.hint">Telegram is included. Additional transports can be added through the transport layer later.</small>
+                </label>
+                <div class="field">
+                  <span data-i18n="conn.runtime.label">Runtime</span>
+                  <label class="switch-control" for="telegramEnabled">
+                    <input id="telegramEnabled" type="checkbox" checked>
+                    <span class="switch-ui" aria-hidden="true"></span>
+                    <span class="switch-copy">
+                      <strong data-i18n="conn.runtime.enable">Enable Telegram bot</strong>
+                      <small data-i18n="conn.runtime.hint">Start polling after settings are saved.</small>
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <label class="field">
+                <span data-i18n="conn.token.label">Telegram bot token</span>
+                <div class="input-action">
+                  <input id="botToken" type="password" autocomplete="off" placeholder="123456789:AA...">
+                  <button type="button" id="toggleToken" class="button secondary" data-i18n="conn.token.show">Show</button>
+                  <button type="button" id="testTelegram" class="button secondary" data-i18n="conn.test.telegram">Test</button>
+                </div>
+                <small id="tokenHint" data-i18n="conn.token.hint.default">Create a simple bot with @BotFather, then paste the complete token here.</small>
+              </label>
+
+              <label class="field">
+                <span data-i18n="conn.users.label">Allowed Telegram user IDs</span>
+                <textarea id="allowedUserIds" rows="3" placeholder="123456789, 987654321"></textarea>
+                <small data-i18n-html="conn.users.hint">Enter one or more positive numeric IDs, separated by commas, spaces, or new lines. Run <code>/id</code> on a temporary bot version to find yours.</small>
+              </label>
+
+              <label class="field">
+                <span data-i18n="conn.root.label">Projects root on this computer</span>
+                <div class="input-action">
+                  <input id="projectsRoot" type="text" placeholder="C:/Users/YourName/Desktop/Projects">
+                  <button type="button" id="testRoot" class="button secondary" data-i18n="conn.root.test">Test path</button>
+                </div>
+                <small data-i18n="conn.root.hint">The bot can browse and create folders only inside this directory.</small>
+              </label>
+
+              <div class="button-row">
+                <button type="button" id="testTelegram" class="button secondary" data-i18n="conn.test.telegram">Test Telegram token</button>
+                <button type="button" class="button primary next-tab" data-next="agent" data-i18n="conn.continue.agent">Continue to agent</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="tab-panel" data-panel="agent">
+            <div class="card section-card">
+              <div class="section-heading">
+                <div>
+                  <p class="step" data-i18n="agent.step">AGENT</p>
+                  <h2 data-i18n="agent.title">Choose the local coding agent</h2>
+                  <p data-i18n="agent.desc">The bot starts the selected CLI or SDK inside the chosen project folder.</p>
+                </div>
+              </div>
+
+              <!-- Agent list. The editor below always edits the selected entry. -->
+              <div class="card section-card agent-selection">
+                <div class="section-heading">
+                  <div>
+                    <h3 data-i18n="agent.selection.title">Configured agents</h3>
+                    <p data-i18n="agent.selection.desc">Every agent here appears in the bot's /agent menu. One provider per agent.</p>
+                  </div>
+                </div>
+
+                <div class="field-grid one">
+                  <label class="field">
+                    <span data-i18n="agent.selection.label">Available agents</span>
+                    <select id="agentSelection" class="agent-select"></select>
+                    <small data-i18n="agent.selection.hint">Select an agent to edit it in the fields below.</small>
+                  </label>
+                </div>
+
+                <div class="button-row">
+                  <button type="button" id="addAgent" class="button secondary" data-i18n="agent.selection.add">Add agent</button>
+                  <button type="button" id="makeDefaultAgent" class="button secondary" data-i18n="agent.selection.makeDefault">Set as default</button>
+                  <button type="button" id="removeAgent" class="button secondary" data-i18n="agent.selection.remove">Remove agent</button>
+                </div>
+              </div>
+
+              <div class="field-grid two">
+                <label class="field">
+                  <span data-i18n="agent.provider.label">Agent provider</span>
+                  <select id="agentProvider">
+                    <option value="claude">Claude Code</option>
+                    <option value="codex">OpenAI Codex CLI</option>
+                    <option value="gemini">Gemini CLI</option>
+                    <option value="custom">Custom CLI adapter</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span data-i18n="agent.displayName.label">Display name</span>
+                  <input id="agentDisplayName" type="text" maxlength="60" value="Claude Code">
+                </label>
+              </div>
+
+              <div class="field-grid two">
+                <label class="field">
+                  <span data-i18n="agent.executable.label">Executable path or command</span>
+                  <input id="agentExecutable" type="text" placeholder="Leave blank for the provider default">
+                  <small data-i18n-html="agent.executable.hint">Examples: <code>claude</code>, <code>codex</code>, <code>gemini</code>, or an absolute executable path.</small>
+                </label>
+                <label class="field">
+                  <span data-i18n="agent.model.label">Model override</span>
+                  <input id="agentModel" type="text" placeholder="Leave blank for the agent default">
+                </label>
+              </div>
+
+              <div class="field-grid three">
+                <label class="field">
+                  <span data-i18n="agent.mode.label">Default permission mode</span>
+                  <select id="defaultMode"></select>
+                  <small data-i18n="agent.mode.hint">This can also be changed per Telegram user from the bot menu.</small>
+                </label>
+                <label class="field">
+                  <span data-i18n="agent.maxTurns.label">Maximum turns</span>
+                  <input id="maxTurns" type="number" min="0" max="500" value="0">
+                  <small data-i18n="agent.maxTurns.hint">0 uses the provider default.</small>
+                </label>
+                <label class="field">
+                  <span data-i18n="agent.maxBudget.label">Maximum budget (USD)</span>
+                  <input id="maxBudget" type="number" min="0" max="10000" step="0.01" value="0">
+                  <small data-i18n="agent.maxBudget.hint">Supported by adapters that expose budget limits. 0 disables it.</small>
+                </label>
+              </div>
+
+              <div id="customAgentPanel" class="subpanel hidden">
+                <h3 data-i18n="custom.title">Custom CLI contract</h3>
+                <p data-i18n-html="custom.desc">Arguments are executed directly without a shell. Use <code>{prompt}</code> and <code>{session_id}</code> placeholders.</p>
+                <label class="field">
+                  <span data-i18n="custom.executable.label">Custom executable</span>
+                  <input id="customExecutable" type="text" placeholder="my-agent">
+                </label>
+                <div class="field-grid two">
+                  <label class="field">
+                    <span data-i18n="custom.newArgs.label">New-session arguments (JSON array)</span>
+                    <textarea id="customNewArgs" rows="4">["{prompt}"]</textarea>
+                  </label>
+                  <label class="field">
+                    <span data-i18n="custom.resumeArgs.label">Resume-session arguments (JSON array)</span>
+                    <textarea id="customResumeArgs" rows="4">["--resume", "{session_id}", "{prompt}"]</textarea>
+                  </label>
+                </div>
+                <div class="field-grid two">
+                  <label class="field">
+                    <span data-i18n="custom.versionArgs.label">Version-check arguments (JSON array)</span>
+                    <textarea id="customVersionArgs" rows="3">["--version"]</textarea>
+                  </label>
+                  <label class="field">
+                    <span data-i18n="custom.outputFormat.label">Output format</span>
+                    <select id="customOutputFormat">
+                      <option value="text" data-i18n="custom.outputFormat.text">Plain text</option>
+                      <option value="json">JSON</option>
+                      <option value="jsonl">JSON Lines</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="field-grid two">
+                  <label class="field">
+                    <span data-i18n="custom.responsePath.label">Response JSON dot path</span>
+                    <input id="customResponsePath" type="text" placeholder="result.text">
+                  </label>
+                  <label class="field">
+                    <span data-i18n="custom.sessionPath.label">Session ID JSON dot path</span>
+                    <input id="customSessionPath" type="text" placeholder="session.id">
+                  </label>
+                </div>
+              </div>
+
+              <label class="field">
+                <span data-i18n="agent.extraEnv.label">Extra environment variables (JSON object)</span>
+                <textarea id="extraEnvironment" rows="4" placeholder='{"MY_VARIABLE":"value"}'>{}</textarea>
+                <small data-i18n="agent.extraEnv.hint">Do not commit secrets. These values are stored only in the ignored local settings file.</small>
+              </label>
+
+              <div class="button-row">
+                <button type="button" id="testAgent" class="button secondary" data-i18n="agent.test">Test agent</button>
+                <button type="button" class="button primary next-tab" data-next="advanced" data-i18n="agent.continue">Continue to advanced</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="tab-panel" data-panel="advanced">
+            <div class="card section-card">
+              <div class="section-heading">
+                <div>
+                  <p class="step" data-i18n="adv.step">ADVANCED</p>
+                  <h2 data-i18n="adv.title">Interface limits</h2>
+                  <p data-i18n="adv.desc">Control pagination without changing source code.</p>
+                </div>
+              </div>
+              <div class="field-grid three">
+                <label class="field">
+                  <span data-i18n="adv.folderPageSize.label">Folders per page</span>
+                  <input id="folderPageSize" type="number" min="4" max="20" value="8">
+                </label>
+                <label class="field">
+                  <span data-i18n="adv.sessionPageSize.label">Sessions per page</span>
+                  <input id="sessionPageSize" type="number" min="4" max="20" value="8">
+                </label>
+                <label class="field">
+                  <span data-i18n="adv.historyPageSize.label">History messages per page</span>
+                  <input id="historyPageSize" type="number" min="2" max="20" value="6">
+                </label>
+              </div>
+              <div class="notice warning">
+                <strong data-i18n="adv.warning.title">Permission warning</strong>
+                <span data-i18n-html="adv.warning.body">Modes such as Claude <code>bypassPermissions</code>, Codex <code>danger-full-access</code>, and Gemini <code>yolo</code> can execute changes with reduced confirmation. Use them only in isolated workspaces you trust.</span>
+              </div>
+              <div class="button-row">
+                <button type="button" class="button primary next-tab" data-next="review" data-i18n="adv.continue">Review settings</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="tab-panel" data-panel="review">
+            <div class="card section-card">
+              <div class="section-heading">
+                <div>
+                  <p class="step" data-i18n="review.step">REVIEW</p>
+                  <h2 data-i18n="review.title">Save and start</h2>
+                  <p data-i18n="review.desc">Review the generated configuration. Saving restarts the Telegram bot with the new settings.</p>
+                </div>
+              </div>
+              <div id="reviewGrid" class="review-grid"></div>
+              <div class="notice">
+                <strong data-i18n="review.notice.title">Git-safe runtime data</strong>
+                <span data-i18n-html="review.notice.body">The local token, settings, SQLite database, logs, and agent caches are excluded by <code>.gitignore</code>. The application code and empty runtime directories remain tracked.</span>
+              </div>
+              <div class="button-row end">
+                <button id="saveSettings" type="submit" class="button primary large" data-i18n="review.save">Save settings and restart bot</button>
+              </div>
+            </div>
+          </section>
+        </form>
+      </section>
+    </main>
+  </div>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>
